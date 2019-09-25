@@ -3,8 +3,8 @@ use crate::spi::Subscriber;
 
 pub struct Foreach<Z, T, F, E>
 where
-T: 'static,
-E: 'static,
+  T: 'static,
+  E: 'static,
   Z: Mono<Item = T, Error = E> + Sized,
   F: 'static + Send + Fn(&T),
 {

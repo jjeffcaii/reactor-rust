@@ -60,11 +60,9 @@ where
 
 #[test]
 fn with_error() {
-  mono::error("Bad").subscribe(CoreSubscriber::new(
-    || (),
-    |_it| unreachable!(),
-    |e| println!("got err: {}", e),
-  ))
+  mono::error("THIS_IS_A_MOCK_ERROR")
+    .do_on_error(|e| println!("DO_ON_ERROR: {}", e))
+    .subscribe(EchoSubscriber::new())
 }
 
 #[test]

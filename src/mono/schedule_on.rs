@@ -3,6 +3,8 @@ use crate::spi::Subscriber;
 use std::marker::PhantomData;
 use std::thread;
 
+const THREAD_NAME: &'static str = "rx";
+
 pub struct MonoScheduleOn<T, E, M, C>
 where
   M: 'static + Send + Mono<Item = T, Error = E> + Sized,
@@ -118,7 +120,7 @@ impl<T, E> Scheduler for NewThreadScheduler<T, E> {
     S: 'static + Send + Sized + Subscriber<Item = T, Error = E>,
   {
     thread::Builder::new()
-      .name(String::from("rx"))
+      .name(String::from(THREAD_NAME))
       .spawn(move || {
         publisher.subscribe(subscriber);
       })

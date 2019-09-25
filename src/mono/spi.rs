@@ -1,4 +1,4 @@
-use crate::mono::{Foreach, MonoFilter, MonoScheduleOn, MonoTransform, Scheduler};
+use crate::mono::{DoOnError, Foreach, MonoFilter, MonoScheduleOn, MonoTransform, Scheduler};
 use crate::spi::Subscriber;
 
 pub trait Mono {
@@ -9,6 +9,14 @@ pub trait Mono {
   where
     Self: Sized,
     S: 'static + Send + Subscriber<Item = Self::Item, Error = Self::Error>;
+
+  fn do_on_error<F>(self, f: F) -> DoOnError<Self::Item, Self::Error, Self, F>
+  where
+    F: 'static + Send + Fn(&Self::Error),
+    Self: Sized,
+  {
+    DoOnError::new(self, f)
+  }
 
   fn do_on_success<F>(self, f: F) -> Foreach<Self, Self::Item, F, Self::Error>
   where

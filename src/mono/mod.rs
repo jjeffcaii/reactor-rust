@@ -1,4 +1,5 @@
 mod creation;
+mod do_on_error;
 mod error;
 mod filter;
 mod foreach;
@@ -9,6 +10,7 @@ mod spi;
 mod transform;
 
 pub use creation::MonoCreate;
+pub use do_on_error::DoOnError;
 pub use error::MonoError;
 pub use filter::MonoFilter;
 pub use foreach::Foreach;
