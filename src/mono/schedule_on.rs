@@ -3,7 +3,7 @@ use crate::spi::Subscriber;
 use std::marker::PhantomData;
 use std::thread;
 
-const THREAD_NAME: &'static str = "rx";
+const THREAD_NAME: &str = "rx";
 
 pub struct MonoScheduleOn<T, E, M, C>
 where

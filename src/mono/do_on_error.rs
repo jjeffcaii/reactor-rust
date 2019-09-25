@@ -1,6 +1,5 @@
 use super::Mono;
 use crate::spi::Subscriber;
-use std::rc::Rc;
 
 pub struct DoOnError<T, E, M, F>
 where

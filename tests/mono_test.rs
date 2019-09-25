@@ -2,7 +2,7 @@ extern crate reactor_rs;
 
 use reactor_rs::mono;
 use reactor_rs::prelude::*;
-use std::{fmt, marker::PhantomData, thread, time};
+use std::{fmt, marker::PhantomData};
 
 #[derive(Debug)]
 struct Record {
@@ -62,7 +62,7 @@ where
 fn with_error() {
   mono::error("THIS_IS_A_MOCK_ERROR")
     .do_on_error(|e| println!("DO_ON_ERROR: {}", e))
-    .subscribe(EchoSubscriber::new())
+    .subscribe(Subscribers::noop())
 }
 
 #[test]
@@ -103,30 +103,24 @@ fn test_map() {
     .map(|n| n * 2)
     .map(|n| n + 1)
     .filter(|n| *n > 4)
-    .do_on_success(|it| println!("foreach: {:?}", it))
+    .do_on_success(|n| assert_eq!(5, *n))
     .filter(|n| *n > 5)
     .subscribe(EchoSubscriber::new());
 }
 
 #[test]
-fn name() {
-  mono::create(|| {
-    let result: Result<u32, ()> = Ok(1234);
-    result
-  })
-  .map(move |it| format!("item#{}", it))
-  .subscribe(EchoSubscriber::new());
+fn create_success() {
+  mono::success(|| 1234)
+    .map(|it| format!("item#{}", it))
+    .subscribe(EchoSubscriber::new());
 }
 
 #[test]
 fn subscribe_on() {
-  mono::create(|| {
-    let result: Result<u32, ()> = Ok(2);
-    result
-  })
-  .map(|n| n * 2)
-  .subscribe_on(Schedulers::new_thread())
-  .map(|n| n * 2)
-  .do_on_success(|n| println!("bingo: {}@{}", n, thread::current().name().unwrap()))
-  .subscribe(Subscribers::noop());
+  mono::success(|| 2)
+    .map(|n| n * 2)
+    .subscribe_on(Schedulers::new_thread())
+    .map(|n| n * 2)
+    .do_on_success(|n| assert_eq!(8, *n))
+    .subscribe(Subscribers::noop());
 }

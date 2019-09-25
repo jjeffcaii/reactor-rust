@@ -1,4 +1,5 @@
 mod creation;
+mod creation_success;
 mod do_on_error;
 mod error;
 mod filter;
@@ -10,6 +11,7 @@ mod spi;
 mod transform;
 
 pub use creation::MonoCreate;
+pub use creation_success::MonoCreateSuccess;
 pub use do_on_error::DoOnError;
 pub use error::MonoError;
 pub use filter::MonoFilter;
@@ -18,6 +20,13 @@ pub use just::MonoJust;
 pub use schedule_on::*;
 pub use spi::Mono;
 pub use transform::MonoTransform;
+
+pub fn success<T, G>(gen: G) -> MonoCreateSuccess<T, G>
+where
+  G: Fn() -> T,
+{
+  MonoCreateSuccess::new(gen)
+}
 
 pub fn create<T, G, E>(gen: G) -> MonoCreate<T, G, E>
 where
