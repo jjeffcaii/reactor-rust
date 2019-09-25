@@ -1,5 +1,6 @@
 use crate::mono::{DoOnError, Foreach, MonoFilter, MonoScheduleOn, MonoTransform, Scheduler};
-use crate::spi::Subscriber;
+use crate::spi::{CoreSubscriber, Subscriber};
+use std::sync::mpsc::channel;
 
 pub trait Mono {
   type Item;
@@ -9,6 +10,26 @@ pub trait Mono {
   where
     Self: Sized,
     S: 'static + Send + Subscriber<Item = Self::Item, Error = Self::Error>;
+
+  fn block(self) -> Result<Self::Item, Self::Error>
+  where
+    Self::Item: 'static + Send,
+    Self::Error: 'static + Send,
+    Self: Sized,
+  {
+    let (tx, rx) = channel();
+    let tx2 = tx.clone();
+    self.subscribe(CoreSubscriber::new(
+      || {},
+      move |it| {
+        tx.send(Ok(it)).unwrap();
+      },
+      move |e| {
+        tx2.send(Err(e)).unwrap();
+      },
+    ));
+    rx.recv().unwrap()
+  }
 
   fn do_on_error<F>(self, f: F) -> DoOnError<Self::Item, Self::Error, Self, F>
   where

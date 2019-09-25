@@ -3,6 +3,7 @@ extern crate reactor_rs;
 use reactor_rs::mono;
 use reactor_rs::prelude::*;
 use std::{fmt, marker::PhantomData};
+use std::{thread, time::Duration};
 
 #[derive(Debug)]
 struct Record {
@@ -123,4 +124,17 @@ fn subscribe_on() {
     .map(|n| n * 2)
     .do_on_success(|n| assert_eq!(8, *n))
     .subscribe(Subscribers::noop());
+}
+
+#[test]
+fn block() {
+  let v = mono::just(512)
+    .subscribe_on(Schedulers::new_thread())
+    .map(|it| {
+      thread::sleep(Duration::from_secs(1));
+      it * 2
+    })
+    .block()
+    .unwrap();
+  assert_eq!(1024, v);
 }
