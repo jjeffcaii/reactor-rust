@@ -1,19 +1,3 @@
-# reactor-rust
-
-> reactor-rust is an implementation of the [Reactive-Streams](https://www.reactive-streams.org) in Rust.  
-It is under active development. **Do not use it in a production environment!**
-
-## Install
-
-Add `reactor_rs = 0.0.1` in your `Cargo.toml`.
-
-## Example
-
-> Here are some basic example codes:
-
-### Mono
-
-```rust
 extern crate reactor_rs;
 
 use reactor_rs::mono;
@@ -38,4 +22,3 @@ fn main() {
   // waiting 1s
   thread::sleep(Duration::from_secs(1));
 }
-```
