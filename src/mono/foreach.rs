@@ -3,8 +3,10 @@ use crate::spi::Subscriber;
 
 pub struct Foreach<Z, T, F, E>
 where
+T: 'static,
+E: 'static,
   Z: Mono<Item = T, Error = E> + Sized,
-  F: Fn(&T),
+  F: 'static + Send + Fn(&T),
 {
   zero: Z,
   f: F,
@@ -13,7 +15,7 @@ where
 impl<Z, T, F, E> Foreach<Z, T, F, E>
 where
   Z: Mono<Item = T, Error = E> + Sized,
-  F: Fn(&T),
+  F: 'static + Send + Fn(&T),
 {
   pub(crate) fn new(zero: Z, f: F) -> Foreach<Z, T, F, E> {
     Foreach { zero, f }
@@ -23,14 +25,14 @@ where
 impl<Z, T, F, E> Mono for Foreach<Z, T, F, E>
 where
   Z: Mono<Item = T, Error = E> + Sized,
-  F: Fn(&T),
+  F: 'static + Send + Fn(&T),
 {
   type Item = T;
   type Error = E;
 
   fn subscribe<S>(self, subscriber: S)
   where
-    S: Subscriber<Item = T, Error = E>,
+    S: 'static + Send + Subscriber<Item = T, Error = E>,
   {
     let sub = ForeachSubscriber::new(subscriber, self.f);
     self.zero.subscribe(sub);
@@ -39,8 +41,8 @@ where
 
 struct ForeachSubscriber<T, S, F, E>
 where
-  S: Subscriber<Item = T, Error = E>,
-  F: Fn(&T),
+  S: 'static + Send + Subscriber<Item = T, Error = E>,
+  F: 'static + Send + Fn(&T),
 {
   actual: S,
   action: F,
@@ -48,8 +50,8 @@ where
 
 impl<T, S, F, E> ForeachSubscriber<T, S, F, E>
 where
-  S: Subscriber<Item = T, Error = E>,
-  F: Fn(&T),
+  S: 'static + Send + Subscriber<Item = T, Error = E>,
+  F: 'static + Send + Fn(&T),
 {
   fn new(actual: S, action: F) -> ForeachSubscriber<T, S, F, E> {
     ForeachSubscriber { actual, action }
@@ -58,8 +60,8 @@ where
 
 impl<T, S, F, E> Subscriber for ForeachSubscriber<T, S, F, E>
 where
-  S: Subscriber<Item = T, Error = E>,
-  F: Fn(&T),
+  S: 'static + Send + Subscriber<Item = T, Error = E>,
+  F: 'static + Send + Fn(&T),
 {
   type Item = T;
   type Error = E;

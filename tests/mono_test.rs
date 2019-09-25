@@ -2,7 +2,7 @@ extern crate reactor_rs;
 
 use reactor_rs::mono;
 use reactor_rs::prelude::*;
-use std::{fmt, marker::PhantomData};
+use std::{fmt, marker::PhantomData, thread, time};
 
 #[derive(Debug)]
 struct Record {
@@ -112,9 +112,8 @@ fn test_map() {
 
 #[test]
 fn name() {
-  let x: u32 = 777888;
   mono::create(|| {
-    let result: Result<&u32, ()> = Ok(&x);
+    let result: Result<u32, ()> = Ok(1234);
     result
   })
   .map(move |it| format!("item#{}", it))
@@ -124,9 +123,12 @@ fn name() {
 #[test]
 fn subscribe_on() {
   mono::create(|| {
-    let result: Result<u32, ()> = Ok(1234);
+    let result: Result<u32, ()> = Ok(2);
     result
   })
+  .map(|n| n * 2)
   .subscribe_on(Schedulers::new_thread())
-  .subscribe(EchoSubscriber::new());
+  .map(|n| n * 2)
+  .do_on_success(|n| println!("bingo: {}@{}", n, thread::current().name().unwrap()))
+  .subscribe(Subscribers::noop());
 }

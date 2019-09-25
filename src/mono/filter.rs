@@ -3,8 +3,10 @@ use crate::spi::Subscriber;
 
 pub struct MonoFilter<M, T, F, E>
 where
+  T: 'static,
+  E: 'static,
   M: Mono<Item = T, Error = E> + Sized,
-  F: Fn(&T) -> bool,
+  F: 'static + Send + Fn(&T) -> bool,
 {
   parent: M,
   predicate: F,
@@ -13,7 +15,7 @@ where
 impl<M, T, F, E> MonoFilter<M, T, F, E>
 where
   M: Mono<Item = T, Error = E> + Sized,
-  F: Fn(&T) -> bool,
+  F: 'static + Send + Fn(&T) -> bool,
 {
   pub(crate) fn new(m: M, f: F) -> MonoFilter<M, T, F, E> {
     MonoFilter {
@@ -26,14 +28,14 @@ where
 impl<M, T, F, E> Mono for MonoFilter<M, T, F, E>
 where
   M: Mono<Item = T, Error = E> + Sized,
-  F: Fn(&T) -> bool,
+  F: 'static + Send + Fn(&T) -> bool,
 {
   type Item = T;
   type Error = E;
 
   fn subscribe<S>(self, subscriber: S)
   where
-    S: Subscriber<Item = T, Error = E>,
+    S: 'static + Send + Subscriber<Item = T, Error = E>,
   {
     let m = self.parent;
     let f = self.predicate;

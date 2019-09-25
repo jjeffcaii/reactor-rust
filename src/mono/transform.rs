@@ -4,8 +4,11 @@ use std::marker::PhantomData;
 
 pub struct MonoTransform<M, T1, T2, F, E>
 where
+T1: 'static,
+T2: 'static,
+E: 'static,
   M: Mono<Item = T1, Error = E> + Sized,
-  F: Fn(T1) -> T2,
+  F: 'static + Send + Fn(T1) -> T2,
 {
   parent: M,
   transformer: F,
@@ -14,7 +17,7 @@ where
 impl<M, T1, T2, F, E> MonoTransform<M, T1, T2, F, E>
 where
   M: Mono<Item = T1, Error = E> + Sized,
-  F: Fn(T1) -> T2,
+  F: 'static + Send + Fn(T1) -> T2,
 {
   pub(crate) fn new(m: M, f: F) -> MonoTransform<M, T1, T2, F, E> {
     MonoTransform {
@@ -26,15 +29,17 @@ where
 
 impl<M, T1, T2, F, E> Mono for MonoTransform<M, T1, T2, F, E>
 where
+T1: Send,
+T2: Send,
   M: Mono<Item = T1, Error = E> + Sized,
-  F: Fn(T1) -> T2,
+  F: 'static + Send + Fn(T1) -> T2,
 {
   type Item = T2;
   type Error = E;
 
   fn subscribe<S>(self, subscriber: S)
   where
-    S: Subscriber<Item = T2, Error = E>,
+    S: 'static + Send + Subscriber<Item = T2, Error = E>,
   {
     self
       .parent
@@ -44,8 +49,8 @@ where
 
 struct TransformSubscriber<T1, T2, F, S, E>
 where
-  F: Fn(T1) -> T2,
-  S: Subscriber<Item = T2, Error = E>,
+  F: 'static + Send + Fn(T1) -> T2,
+  S: 'static + Send + Subscriber<Item = T2, Error = E>,
 {
   actual: S,
   transformer: F,
@@ -54,8 +59,8 @@ where
 
 impl<T1, T2, F, S, E> TransformSubscriber<T1, T2, F, S, E>
 where
-  F: Fn(T1) -> T2,
-  S: Subscriber<Item = T2, Error = E>,
+  F: 'static + Send + Fn(T1) -> T2,
+  S: 'static + Send + Subscriber<Item = T2, Error = E>,
 {
   fn new(actual: S, transformer: F) -> TransformSubscriber<T1, T2, F, S, E> {
     TransformSubscriber {
@@ -68,8 +73,8 @@ where
 
 impl<T1, T2, F, S, E> Subscriber for TransformSubscriber<T1, T2, F, S, E>
 where
-  F: Fn(T1) -> T2,
-  S: Subscriber<Item = T2, Error = E>,
+  F: 'static + Send + Fn(T1) -> T2,
+  S: 'static  + Send +Subscriber<Item = T2, Error = E>,
 {
   type Item = T1;
   type Error = E;

@@ -8,11 +8,11 @@ pub trait Mono {
   fn subscribe<S>(self, subscriber: S)
   where
     Self: Sized,
-    S: Subscriber<Item = Self::Item, Error = Self::Error>;
+    S: 'static + Send + Subscriber<Item = Self::Item, Error = Self::Error>;
 
   fn do_on_success<F>(self, f: F) -> Foreach<Self, Self::Item, F, Self::Error>
   where
-    F: Fn(&Self::Item),
+    F: 'static + Send + Fn(&Self::Item),
     Self: Sized,
   {
     Foreach::new(self, f)
@@ -20,7 +20,7 @@ pub trait Mono {
 
   fn map<T, F>(self, transform: F) -> MonoTransform<Self, Self::Item, T, F, Self::Error>
   where
-    F: Fn(Self::Item) -> T,
+    F: 'static + Send + Fn(Self::Item) -> T,
     Self: Sized,
   {
     MonoTransform::new(self, transform)
@@ -29,7 +29,7 @@ pub trait Mono {
   fn filter<F>(self, predicate: F) -> MonoFilter<Self, Self::Item, F, Self::Error>
   where
     Self: Sized,
-    F: Fn(&Self::Item) -> bool,
+    F: 'static + Send + Fn(&Self::Item) -> bool,
   {
     MonoFilter::new(self, predicate)
   }

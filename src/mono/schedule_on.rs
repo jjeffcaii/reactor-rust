@@ -20,30 +20,23 @@ where
   pub fn new(source: M, scheduler: C) -> MonoScheduleOn<T, E, M, C> {
     MonoScheduleOn { source, scheduler }
   }
+}
 
-  pub fn subscribe<S>(self, subscriber: S)
+impl<T, E, M, C> Mono for MonoScheduleOn<T, E, M, C>
+where
+  M: 'static + Send + Mono<Item = T, Error = E> + Sized,
+  C: Scheduler<Item = T, Error = E> + Sized,
+{
+  type Item = T;
+  type Error = E;
+
+  fn subscribe<S>(self, subscriber: S)
   where
     S: 'static + Send + Subscriber<Item = T, Error = E>,
   {
     self.scheduler.schedule(self.source, subscriber);
   }
 }
-
-// impl<T, E, M, C> Mono for MonoScheduleOn<T, E, M, C>
-// where
-//   M: 'static + Send + Mono<Item = T, Error = E> + Sized,
-//   C: Scheduler<Item = T, Error = E> + Sized,
-// {
-//   type Item = T;
-//   type Error = E;
-
-//   fn subscribe<S>(self, subscriber: S)
-//   where
-//     S: Subscriber<Item = T, Error = E>,
-//   {
-//     self.scheduler.schedule(self.source, subscriber);
-//   }
-// }
 
 pub trait Scheduler {
   type Item;
@@ -58,12 +51,46 @@ pub trait Scheduler {
 pub struct Schedulers;
 
 impl Schedulers {
+  pub fn immediate<T, E>() -> ImmediateScheduler<T, E>
+  where
+    T: 'static,
+    E: 'static,
+  {
+    ImmediateScheduler::new()
+  }
   pub fn new_thread<T, E>() -> NewThreadScheduler<T, E>
   where
     T: 'static,
     E: 'static,
   {
     NewThreadScheduler::new()
+  }
+}
+
+pub struct ImmediateScheduler<T, E> {
+  _t: PhantomData<T>,
+  _e: PhantomData<E>,
+}
+
+impl<T, E> ImmediateScheduler<T, E> {
+  pub(crate) fn new() -> ImmediateScheduler<T, E> {
+    ImmediateScheduler {
+      _t: PhantomData,
+      _e: PhantomData,
+    }
+  }
+}
+
+impl<T, E> Scheduler for ImmediateScheduler<T, E> {
+  type Item = T;
+  type Error = E;
+
+  fn schedule<P, S>(&self, publisher: P, subscriber: S)
+  where
+    P: 'static + Send + Sized + Mono<Item = T, Error = E>,
+    S: 'static + Send + Sized + Subscriber<Item = T, Error = E>,
+  {
+    publisher.subscribe(subscriber);
   }
 }
 
@@ -90,8 +117,11 @@ impl<T, E> Scheduler for NewThreadScheduler<T, E> {
     P: 'static + Send + Sized + Mono<Item = T, Error = E>,
     S: 'static + Send + Sized + Subscriber<Item = T, Error = E>,
   {
-    thread::spawn(move || {
-      publisher.subscribe(subscriber);
-    });
+    thread::Builder::new()
+      .name(String::from("rx"))
+      .spawn(move || {
+        publisher.subscribe(subscriber);
+      })
+      .unwrap();
   }
 }
