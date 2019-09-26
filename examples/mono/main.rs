@@ -2,6 +2,7 @@ extern crate reactor_rs;
 
 use reactor_rs::mono;
 use reactor_rs::prelude::*;
+use reactor_rs::schedulers;
 use std::{thread, time::Duration};
 
 fn main() {
@@ -12,7 +13,7 @@ fn main() {
         n
       );
     })
-    .subscribe_on(Schedulers::new_thread())
+    .subscribe_on(schedulers::new_thread())
     .map(|n| n * 2)
     .subscribe(CoreSubscriber::new(
       || println!("on complete"),

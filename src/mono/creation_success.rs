@@ -1,5 +1,5 @@
-use super::Mono;
-use crate::spi::{Subscriber, Subscription};
+use super::spi::Mono;
+use crate::spi::{Publisher, Subscriber, Subscription};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -20,7 +20,7 @@ where
   }
 }
 
-impl<T, G> Mono for MonoCreateSuccess<T, G>
+impl<T, G> Publisher for MonoCreateSuccess<T, G>
 where
   G: Fn() -> T,
 {
@@ -36,6 +36,8 @@ where
     sub.on_subscribe(subs);
   }
 }
+
+impl<T, G> Mono<T, ()> for MonoCreateSuccess<T, G> where G: Fn() -> T {}
 
 struct CreateSuccessSubscription<T, G, S>
 where

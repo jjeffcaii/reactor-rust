@@ -2,6 +2,7 @@ extern crate reactor_rs;
 
 use reactor_rs::mono;
 use reactor_rs::prelude::*;
+use reactor_rs::schedulers;
 use std::{fmt, marker::PhantomData};
 use std::{thread, time::Duration};
 
@@ -83,6 +84,11 @@ fn tiny() {
 }
 
 #[test]
+fn test_next_subscriber() {
+  mono::success(|| 42).subscribe(Subscribers::next(|v| assert_eq!(42, v)));
+}
+
+#[test]
 fn bingo() {
   mono::create(|| {
     let ret: Result<Record, ()> = Ok(Record::new(String::from("Jeffsky"), 18));
@@ -120,7 +126,7 @@ fn create_success() {
 fn subscribe_on() {
   mono::success(|| 2)
     .map(|n| n * 2)
-    .subscribe_on(Schedulers::new_thread())
+    .subscribe_on(schedulers::new_thread())
     .map(|n| n * 2)
     .do_on_success(|n| assert_eq!(8, *n))
     .subscribe(Subscribers::noop());
@@ -129,12 +135,38 @@ fn subscribe_on() {
 #[test]
 fn block() {
   let v = mono::just(512)
-    .subscribe_on(Schedulers::new_thread())
+    .subscribe_on(schedulers::new_thread())
     .map(|it| {
       thread::sleep(Duration::from_secs(1));
       it * 2
     })
     .block()
+    .unwrap()
     .unwrap();
   assert_eq!(1024, v);
+}
+
+#[test]
+fn test_flatmap() {
+  let result = mono::just(1)
+    .flatmap(|n| mono::just(format!("as string {}", n)))
+    .block()
+    .unwrap()
+    .unwrap();
+  // assert_eq!(2, v);
+}
+
+#[test]
+fn test_finally() {
+  mono::success(|| 1234)
+    .do_finally(|| {
+      println!("====> DO_FINALLY!!!");
+    })
+    .map(|v| format!("Hello {}", v))
+    .subscribe(EchoSubscriber::new());
+  mono::error("Oops!")
+    .do_finally(|| {
+      println!("====> DO_FINALLY!!!");
+    })
+    .subscribe(EchoSubscriber::new());
 }

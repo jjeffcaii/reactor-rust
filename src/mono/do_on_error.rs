@@ -1,32 +1,41 @@
-use super::Mono;
-use crate::spi::Subscriber;
+use super::spi::Mono;
+use crate::spi::{Publisher,Subscriber};
+use std::marker::PhantomData;
 
 pub struct DoOnError<T, E, M, F>
 where
   T: 'static,
   E: 'static,
-  M: Mono<Item = T, Error = E> + Sized,
+  M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&E),
 {
   source: M,
   f: F,
+  _t:PhantomData<T>,
+  _e: PhantomData<E>,
 }
 
 impl<T, E, M, F> DoOnError<T, E, M, F>
 where
   T: 'static,
   E: 'static,
-  M: Mono<Item = T, Error = E> + Sized,
+  M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&E),
 {
   pub(crate) fn new(source: M, f: F) -> DoOnError<T, E, M, F> {
-    DoOnError { source, f }
+    DoOnError { source, f,_t: PhantomData,_e: PhantomData, }
   }
 }
-
-impl<T, E, M, F> Mono for DoOnError<T, E, M, F>
+impl<T, E, M, F> Mono<T,E> for DoOnError<T, E, M, F>
 where
-  M: Mono<Item = T, Error = E> + Sized,
+  M: Mono<T, E> + Sized,
+  F: 'static + Send + Fn(&E),
+{
+}
+
+impl<T, E, M, F> Publisher for DoOnError<T, E, M, F>
+where
+  M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&E),
 {
   type Item = T;

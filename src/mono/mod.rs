@@ -1,8 +1,10 @@
 mod creation;
 mod creation_success;
+mod do_finally;
 mod do_on_error;
 mod error;
 mod filter;
+mod flatmap;
 mod foreach;
 mod just;
 mod misc;
@@ -12,9 +14,11 @@ mod transform;
 
 pub use creation::MonoCreate;
 pub use creation_success::MonoCreateSuccess;
+pub use do_finally::MonoDoFinally;
 pub use do_on_error::DoOnError;
 pub use error::MonoError;
 pub use filter::MonoFilter;
+pub use flatmap::MonoFlatMap;
 pub use foreach::Foreach;
 pub use just::MonoJust;
 pub use schedule_on::*;

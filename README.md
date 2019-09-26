@@ -1,6 +1,6 @@
 # reactor-rust
 
-> reactor-rust is an implementation of the [Reactive-Streams](https://www.reactive-streams.org) in Rust.  
+> reactor-rust is an implementation of the [Reactive-Streams](https://www.reactive-streams.org) in Rust.
 It is under active development. **Do not use it in a production environment!**
 
 ## Install
@@ -18,6 +18,7 @@ extern crate reactor_rs;
 
 use reactor_rs::mono;
 use reactor_rs::prelude::*;
+use reactor_rs::schedulers;
 use std::{thread, time::Duration};
 
 fn main() {
@@ -28,7 +29,7 @@ fn main() {
         n
       );
     })
-    .subscribe_on(Schedulers::new_thread())
+    .subscribe_on(schedulers::new_thread())
     .map(|n| n * 2)
     .subscribe(CoreSubscriber::new(
       || println!("on complete"),

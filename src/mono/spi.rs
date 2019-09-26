@@ -1,33 +1,19 @@
-use crate::mono::{DoOnError, Foreach, MonoFilter, MonoScheduleOn, MonoTransform, Scheduler};
-use crate::spi::{CoreSubscriber, Subscriber};
-use std::sync::mpsc::channel;
+use super::misc::BlockSubscriber;
+use super::{
+  DoOnError, Foreach, MonoDoFinally, MonoFilter, MonoFlatMap, MonoScheduleOn, MonoTransform,
+};
+use crate::schedulers::Scheduler;
+use crate::spi::Publisher;
 
-pub trait Mono {
-  type Item;
-  type Error;
-
-  fn subscribe<S>(self, subscriber: S)
-  where
-    Self: Sized,
-    S: 'static + Send + Subscriber<Item = Self::Item, Error = Self::Error>;
-
-  fn block(self) -> Result<Self::Item, Self::Error>
+pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
+  fn block(self) -> Result<Option<Self::Item>, Self::Error>
   where
     Self::Item: 'static + Send,
     Self::Error: 'static + Send,
     Self: Sized,
   {
-    let (tx, rx) = channel();
-    let tx2 = tx.clone();
-    self.subscribe(CoreSubscriber::new(
-      || {},
-      move |it| {
-        tx.send(Ok(it)).unwrap();
-      },
-      move |e| {
-        tx2.send(Err(e)).unwrap();
-      },
-    ));
+    let (sub, rx) = BlockSubscriber::new();
+    self.subscribe(sub);
     rx.recv().unwrap()
   }
 
@@ -47,12 +33,29 @@ pub trait Mono {
     Foreach::new(self, f)
   }
 
-  fn map<T, F>(self, transform: F) -> MonoTransform<Self, Self::Item, T, F, Self::Error>
+  fn map<A, F>(self, transform: F) -> MonoTransform<Self, Self::Item, A, F, Self::Error>
   where
-    F: 'static + Send + Fn(Self::Item) -> T,
+    F: 'static + Send + Fn(Self::Item) -> A,
     Self: Sized,
   {
     MonoTransform::new(self, transform)
+  }
+
+  fn flatmap<A, M, F>(self, mapper: F) -> MonoFlatMap<Self::Item, A, Self::Error, Self, M, F>
+  where
+    Self: Sized,
+    M: Mono<A, Self::Error>,
+    F: 'static + Send + Fn(Self::Item) -> M,
+  {
+    MonoFlatMap::new(self, mapper)
+  }
+
+  fn do_finally<F>(self, action: F) -> MonoDoFinally<Self::Item, Self::Error, Self, F>
+  where
+    Self: Sized,
+    F: 'static + Send + Fn(),
+  {
+    MonoDoFinally::new(self, action)
   }
 
   fn filter<F>(self, predicate: F) -> MonoFilter<Self, Self::Item, F, Self::Error>

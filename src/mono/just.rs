@@ -1,5 +1,5 @@
-use crate::mono::Mono;
-use crate::spi::{Subscriber, Subscription};
+use super::spi::Mono;
+use crate::spi::{Publisher, Subscriber, Subscription};
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -21,7 +21,13 @@ where
   }
 }
 
-impl<T, E> Mono for MonoJust<T, E>
+impl<T, E> Mono<T,E> for MonoJust<T, E>
+where
+  T: Clone,
+{
+}
+
+impl<T, E> Publisher for MonoJust<T, E>
 where
   T: Clone,
 {

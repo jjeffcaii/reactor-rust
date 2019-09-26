@@ -4,10 +4,6 @@
 extern crate log;
 pub mod flux;
 pub mod mono;
+pub mod prelude;
+pub mod schedulers;
 mod spi;
-
-pub mod prelude {
-  pub use crate::mono::Mono;
-  pub use crate::mono::{Scheduler, Schedulers};
-  pub use crate::spi::*;
-}

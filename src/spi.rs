@@ -2,6 +2,15 @@ use std::marker::PhantomData;
 
 pub const REQUEST_MAX: usize = 0x7fff_ffff;
 
+pub trait Publisher {
+  type Item;
+  type Error;
+  fn subscribe<U>(self, subscriber: U)
+  where
+    Self: Sized,
+    U: 'static + Send + Subscriber<Item = Self::Item, Error = Self::Error>;
+}
+
 pub trait Subscription: Sized {
   fn request(&self, n: usize);
   fn cancel(&self);
@@ -80,9 +89,52 @@ where
 pub struct Subscribers;
 
 impl Subscribers {
+  pub fn next<T, E, F>(action: F) -> impl Subscriber<Item = T, Error = E>
+  where
+    F: Fn(T),
+  {
+    NextSubscriber::new(action)
+  }
+
   pub fn noop<T, E>() -> impl Subscriber<Item = T, Error = E> {
     NoopSubscriber::new()
   }
+}
+
+pub(crate) struct NextSubscriber<T, E, F>
+where
+  F: Fn(T),
+{
+  f: F,
+  _t: PhantomData<T>,
+  _e: PhantomData<E>,
+}
+
+impl<T, E, F> NextSubscriber<T, E, F>
+where
+  F: Fn(T),
+{
+  pub(crate) fn new(f: F) -> NextSubscriber<T, E, F> {
+    NextSubscriber {
+      f,
+      _t: PhantomData,
+      _e: PhantomData,
+    }
+  }
+}
+
+impl<T, E, F> Subscriber for NextSubscriber<T, E, F>
+where
+  F: Fn(T),
+{
+  type Item = T;
+  type Error = E;
+
+  fn on_complete(&self) {}
+  fn on_next(&self, t: T) {
+    (self.f)(t)
+  }
+  fn on_error(&self, _e: E) {}
 }
 
 pub(crate) struct NoopSubscriber<T, E> {

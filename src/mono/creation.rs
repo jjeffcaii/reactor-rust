@@ -1,5 +1,5 @@
-use crate::mono::Mono;
-use crate::spi::{Subscriber, Subscription};
+use super::spi::Mono;
+use crate::spi::{Subscriber, Subscription,Publisher};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -20,7 +20,13 @@ where
   }
 }
 
-impl<T, G, E> Mono for MonoCreate<T, G, E>
+impl<T, G, E> Mono<T,E> for MonoCreate<T, G, E>
+where
+  G: Fn() -> Result<T, E>,
+{
+}
+
+impl<T, G, E> Publisher for MonoCreate<T, G, E>
 where
   G: Fn() -> Result<T, E>,
 {

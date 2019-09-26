@@ -1,6 +1,6 @@
 use super::misc::EmptySubscription;
-use super::Mono;
-use crate::spi::Subscriber;
+use super::spi::Mono;
+use crate::spi::{Publisher,Subscriber};
 
 pub struct MonoError<E> {
   e: E,
@@ -12,7 +12,10 @@ impl<E> MonoError<E> {
   }
 }
 
-impl<E> Mono for MonoError<E> {
+impl<E> Mono<(),E> for MonoError<E> {
+}
+
+impl<E> Publisher for MonoError<E> {
   type Item = ();
   type Error = E;
 

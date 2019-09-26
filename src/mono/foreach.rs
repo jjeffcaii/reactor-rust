@@ -1,30 +1,40 @@
-use crate::mono::Mono;
-use crate::spi::Subscriber;
+use super::spi::Mono;
+use crate::spi::{Publisher,Subscriber};
+use std::marker::PhantomData;
 
 pub struct Foreach<Z, T, F, E>
 where
   T: 'static,
   E: 'static,
-  Z: Mono<Item = T, Error = E> + Sized,
+  Z: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T),
 {
   zero: Z,
   f: F,
+  _t: PhantomData<T>,
+  _e: PhantomData<E>,
 }
 
 impl<Z, T, F, E> Foreach<Z, T, F, E>
 where
-  Z: Mono<Item = T, Error = E> + Sized,
+  Z: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T),
 {
   pub(crate) fn new(zero: Z, f: F) -> Foreach<Z, T, F, E> {
-    Foreach { zero, f }
+    Foreach { zero, f,_t: PhantomData,_e: PhantomData, }
   }
 }
 
-impl<Z, T, F, E> Mono for Foreach<Z, T, F, E>
+impl<Z, T, F, E> Mono<T,E> for Foreach<Z, T, F, E>
 where
-  Z: Mono<Item = T, Error = E> + Sized,
+  Z: Mono<T, E> + Sized,
+  F: 'static + Send + Fn(&T),
+{
+}
+
+impl<Z, T, F, E> Publisher for Foreach<Z, T, F, E>
+where
+  Z: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T),
 {
   type Item = T;

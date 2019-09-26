@@ -1,33 +1,45 @@
-use crate::mono::Mono;
-use crate::spi::Subscriber;
+use super::spi::Mono;
+use crate::spi::{Publisher,Subscriber};
+use std::marker::PhantomData;
 
 pub struct MonoFilter<M, T, F, E>
 where
   T: 'static,
   E: 'static,
-  M: Mono<Item = T, Error = E> + Sized,
+  M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T) -> bool,
 {
   parent: M,
   predicate: F,
+  _t: PhantomData<T>,
+  _e: PhantomData<E>,
 }
 
 impl<M, T, F, E> MonoFilter<M, T, F, E>
 where
-  M: Mono<Item = T, Error = E> + Sized,
+  M: Mono< T,  E> + Sized,
   F: 'static + Send + Fn(&T) -> bool,
 {
   pub(crate) fn new(m: M, f: F) -> MonoFilter<M, T, F, E> {
     MonoFilter {
       parent: m,
       predicate: f,
+      _t: PhantomData,
+      _e: PhantomData,
     }
   }
 }
 
-impl<M, T, F, E> Mono for MonoFilter<M, T, F, E>
+impl<M, T, F, E> Mono<T,E> for MonoFilter<M, T, F, E>
 where
-  M: Mono<Item = T, Error = E> + Sized,
+  M: Mono< T, E> + Sized,
+  F: 'static + Send + Fn(&T) -> bool,
+{
+}
+
+impl<M, T, F, E> Publisher for MonoFilter<M, T, F, E>
+where
+  M: Mono< T, E> + Sized,
   F: 'static + Send + Fn(&T) -> bool,
 {
   type Item = T;
