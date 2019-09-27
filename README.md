@@ -2,6 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/reactor_rs)](https://crates.io/crates/reactor_rs)
 [![Crates.io](https://img.shields.io/crates/d/reactor_rs)](https://crates.io/crates/reactor_rs)
+[![Build Status](https://travis-ci.com/jjeffcaii/reactor-rust.svg?branch=master)](https://travis-ci.com/jjeffcaii/reactor-rust)
 [![License](https://img.shields.io/github/license/jjeffcaii/reactor-rust.svg)](https://github.com/jjeffcaii/reactor-rust/blob/master/LICENSE)
 [![GitHub Release](https://img.shields.io/github/release-pre/jjeffcaii/reactor-rust.svg)](https://github.com/jjeffcaii/reactor-rust/releases)
 
