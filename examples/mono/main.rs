@@ -15,11 +15,9 @@ fn main() {
     })
     .subscribe_on(schedulers::new_thread())
     .map(|n| n * 2)
-    .subscribe(CoreSubscriber::new(
-      || println!("on complete"),
-      |n| println!("now it should be 84: actual={}!", n),
-      |_e| unreachable!(),
-    ));
+    .subscribe(Subscribers::next(|n| {
+      println!("now it should be 84: actual={}!", n)
+    }));
   // waiting 1s
   thread::sleep(Duration::from_secs(1));
 }

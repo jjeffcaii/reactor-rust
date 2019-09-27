@@ -1,5 +1,5 @@
 use super::spi::Mono;
-use crate::spi::{Publisher, Subscriber};
+use crate::spi::{Publisher, Subscriber,Subscription};
 use std::marker::PhantomData;
 
 pub struct MonoDoOnError<T, E, M, F>
@@ -79,6 +79,11 @@ where
 {
   type Item = T;
   type Error = E;
+
+    fn on_subscribe(&self, subscription: impl Subscription){
+      self.actual.on_subscribe(subscription);
+    }
+
   fn on_complete(&self) {
     self.actual.on_complete();
   }

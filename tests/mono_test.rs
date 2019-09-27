@@ -48,6 +48,10 @@ where
   type Item = T;
   type Error = E;
 
+  fn on_subscribe(&self, subscription: impl Subscription) {
+    subscription.request(REQUEST_MAX)
+  }
+
   fn on_complete(&self) {
     println!("[ON_COMPLETE]")
   }
@@ -73,11 +77,7 @@ fn tiny() {
     let ret: Result<u32, ()> = Ok(1234);
     ret
   })
-  .subscribe(CoreSubscriber::new(
-    || println!("complete!"),
-    |it| println!("******* subscribe: {}", it),
-    |_| unreachable!(),
-  ));
+  .subscribe(EchoSubscriber::new());
   let just = mono::just(77778888);
   just.clone().subscribe(EchoSubscriber::new());
   just.clone().subscribe(EchoSubscriber::new());
@@ -147,14 +147,14 @@ fn block() {
 }
 
 #[test]
-#[ignore]
 fn test_flatmap() {
   let result = mono::just(1)
-    .flatmap(|n| mono::just(format!("as string {}", n)))
+    .flatmap(|n| mono::success(move || n * 2))
     .block()
     .unwrap()
     .unwrap();
-  // assert_eq!(2, v);
+  println!("----> result: {}", result);
+  assert_eq!(2, result);
 }
 
 #[test]

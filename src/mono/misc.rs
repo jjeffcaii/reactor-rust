@@ -1,7 +1,9 @@
-use crate::spi::Subscriber;
-use crate::spi::Subscription;
+use crate::spi::{Subscriber, Subscription, REQUEST_MAX};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Once;
+
+type BlockSender<T, E> = Sender<Result<Option<T>, E>>;
+type BlockReceiver<T, E> = Receiver<Result<Option<T>, E>>;
 
 pub(crate) struct EmptySubscription;
 
@@ -11,12 +13,12 @@ impl Subscription for EmptySubscription {
 }
 
 pub(crate) struct BlockSubscriber<T, E> {
-  tx: Sender<Result<Option<T>, E>>,
+  tx: BlockSender<T, E>,
   once: Once,
 }
 
 impl<T, E> BlockSubscriber<T, E> {
-  pub(crate) fn new() -> (BlockSubscriber<T, E>, Receiver<Result<Option<T>, E>>) {
+  pub(crate) fn new() -> (BlockSubscriber<T, E>, BlockReceiver<T, E>) {
     let (tx, rx) = channel();
     let sub = BlockSubscriber {
       tx,
@@ -29,6 +31,10 @@ impl<T, E> BlockSubscriber<T, E> {
 impl<T, E> Subscriber for BlockSubscriber<T, E> {
   type Item = T;
   type Error = E;
+
+  fn on_subscribe(&self, subscription: impl Subscription) {
+    subscription.request(REQUEST_MAX);
+  }
 
   fn on_complete(&self) {
     let tx = self.tx.clone();
@@ -44,7 +50,7 @@ impl<T, E> Subscriber for BlockSubscriber<T, E> {
     });
   }
 
-  fn on_error(&self, e: Self::Error) {
+  fn on_error(&self, e: E) {
     let tx = self.tx.clone();
     self.once.call_once(|| {
       tx.clone().send(Err(e)).unwrap();

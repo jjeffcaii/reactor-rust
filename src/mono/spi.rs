@@ -43,8 +43,11 @@ pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
 
   fn flatmap<A, M, F>(self, mapper: F) -> MonoFlatMap<Self::Item, A, Self::Error, Self, M, F>
   where
-    Self: Sized,
-    M: Mono<A, Self::Error>,
+    Self: 'static + Send + Sized,
+    Self::Item: 'static + Send,
+    Self::Error: 'static + Send,
+    A: 'static + Send,
+    M: 'static + Send + Mono<A, Self::Error>,
     F: 'static + Send + Fn(Self::Item) -> M,
   {
     MonoFlatMap::new(self, mapper)

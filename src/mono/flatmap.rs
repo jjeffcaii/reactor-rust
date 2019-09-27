@@ -1,13 +1,16 @@
+use super::misc::EmptySubscription;
 use super::spi::Mono;
-use crate::spi::{Publisher, Subscriber, Subscription};
+use crate::spi::{Publisher, Subscriber, Subscription, REQUEST_MAX};
 use std::marker::PhantomData;
-use std::sync::Arc;
-use std::sync::Once;
+use std::sync::{Arc, Mutex, Once};
 
 pub struct MonoFlatMap<T1, T2, E, M1, M2, F>
 where
-  M1: Mono<T1, E>,
-  M2: Mono<T2, E>,
+  T1: 'static + Send,
+  T2: 'static + Send,
+  E: 'static + Send,
+  M1: 'static + Send + Mono<T1, E>,
+  M2: 'static + Send + Mono<T2, E>,
   F: 'static + Send + Fn(T1) -> M2,
 {
   source: M1,
@@ -19,8 +22,11 @@ where
 
 impl<T1, T2, E, M1, M2, F> MonoFlatMap<T1, T2, E, M1, M2, F>
 where
-  M1: Mono<T1, E>,
-  M2: Mono<T2, E>,
+  T1: 'static + Send,
+  T2: 'static + Send,
+  E: 'static + Send,
+  M1: 'static + Send + Mono<T1, E>,
+  M2: 'static + Send + Mono<T2, E>,
   F: 'static + Send + Fn(T1) -> M2,
 {
   pub(crate) fn new(source: M1, mapper: F) -> MonoFlatMap<T1, T2, E, M1, M2, F> {
@@ -36,36 +42,49 @@ where
 
 impl<T1, T2, E, M1, M2, F> Mono<T2, E> for MonoFlatMap<T1, T2, E, M1, M2, F>
 where
-  M1: Mono<T1, E>,
-  M2: Mono<T2, E>,
+  T1: 'static + Send,
+  T2: 'static + Send,
+  E: 'static + Send,
+  M1: 'static + Send + Mono<T1, E>,
+  M2: 'static + Send + Mono<T2, E>,
   F: 'static + Send + Fn(T1) -> M2,
 {
 }
 
 impl<T1, T2, E, M1, M2, F> Publisher for MonoFlatMap<T1, T2, E, M1, M2, F>
 where
-  M1: Mono<T1, E>,
-  M2: Mono<T2, E>,
+  T1: 'static + Send,
+  T2: 'static + Send,
+  E: 'static + Send,
+  M1: 'static + Send + Mono<T1, E>,
+  M2: 'static + Send + Mono<T2, E>,
   F: 'static + Send + Fn(T1) -> M2,
 {
   type Item = T2;
   type Error = E;
 
   fn subscribe(self, subscriber: impl Subscriber<Item = T2, Error = E> + 'static + Send) {
-    let actual = Arc::new(subscriber);
+    let actual = Arc::new(Mutex::new(subscriber));
     let s = MainSubscriber::new(actual.clone(), self.mapper);
-    actual.on_subscribe(s);
-    // self.source.subscribe(s);
+    actual
+      .clone()
+      .lock()
+      .unwrap()
+      .on_subscribe(EmptySubscription);
+    self.source.subscribe(s);
   }
 }
 
 struct MainSubscriber<T1, T2, E, M, S, F>
 where
+  T1: 'static + Send,
+  T2: 'static + Send,
+  E: 'static + Send,
   S: 'static + Send + Subscriber<Item = T2, Error = E>,
-  M: Mono<T2, E>,
+  M: 'static + Send + Mono<T2, E>,
   F: 'static + Send + Fn(T1) -> M,
 {
-  actual: Arc<S>,
+  actual: Arc<Mutex<S>>,
   mapper: F,
   once: Once,
   _m: PhantomData<M>,
@@ -74,11 +93,14 @@ where
 
 impl<T1, T2, E, M, S, F> MainSubscriber<T1, T2, E, M, S, F>
 where
+  T1: 'static + Send,
+  T2: 'static + Send,
+  E: 'static + Send,
   S: 'static + Send + Subscriber<Item = T2, Error = E>,
-  M: Mono<T2, E>,
+  M: 'static + Send + Mono<T2, E>,
   F: 'static + Send + Fn(T1) -> M,
 {
-  fn new(actual: Arc<S>, mapper: F) -> MainSubscriber<T1, T2, E, M, S, F> {
+  fn new(actual: Arc<Mutex<S>>, mapper: F) -> MainSubscriber<T1, T2, E, M, S, F> {
     MainSubscriber {
       actual,
       mapper,
@@ -91,43 +113,46 @@ where
 
 impl<T1, T2, E, M, S, F> Subscriber for MainSubscriber<T1, T2, E, M, S, F>
 where
+  T1: 'static + Send,
+  T2: 'static + Send,
+  E: 'static + Send,
   S: 'static + Send + Subscriber<Item = T2, Error = E>,
-  M: Mono<T2, E>,
+  M: 'static + Send + Mono<T2, E>,
   F: 'static + Send + Fn(T1) -> M,
 {
   type Item = T1;
   type Error = E;
 
+  fn on_subscribe(&self, subscription: impl Subscription) {
+    subscription.request(REQUEST_MAX);
+  }
+
   fn on_complete(&self) {
-    self.once.call_once(|| self.actual.on_complete());
+    let actual = self.actual.clone();
+    self.once.call_once(|| {
+      let v = actual.lock().unwrap();
+      v.on_complete();
+    });
   }
   fn on_next(&self, t: T1) {
     let m2 = (self.mapper)(t);
-    // TODO: create inner subscriber
     let inner = InnerSubscriber::new(self.actual.clone());
-    // m2.subscribe(inner)
+    m2.subscribe(inner)
   }
   fn on_error(&self, e: E) {
-    self.once.call_once(move || self.actual.on_error(e));
+    let actual = self.actual.clone();
+    self.once.call_once(move || {
+      let s = actual.lock().unwrap();
+      s.on_error(e);
+    });
   }
-}
-
-impl<T1, T2, E, M, S, F> Subscription for MainSubscriber<T1, T2, E, M, S, F>
-where
-  S: 'static + Send + Subscriber<Item = T2, Error = E>,
-  M: Mono<T2, E>,
-  F: 'static + Send + Fn(T1) -> M,
-{
-  fn request(&self, n: usize) {}
-
-  fn cancel(&self) {}
 }
 
 struct InnerSubscriber<T, E, S>
 where
   S: 'static + Send + Subscriber<Item = T, Error = E>,
 {
-  actual: Arc<S>,
+  actual: Arc<Mutex<S>>,
   once: Once,
 }
 
@@ -135,7 +160,7 @@ impl<T, E, S> InnerSubscriber<T, E, S>
 where
   S: 'static + Send + Subscriber<Item = T, Error = E>,
 {
-  fn new(actual: Arc<S>) -> InnerSubscriber<T, E, S> {
+  fn new(actual: Arc<Mutex<S>>) -> InnerSubscriber<T, E, S> {
     InnerSubscriber {
       actual,
       once: Once::new(),
@@ -150,14 +175,26 @@ where
   type Item = T;
   type Error = E;
 
+  fn on_subscribe(&self, subscription: impl Subscription) {
+    subscription.request(REQUEST_MAX);
+  }
+
   fn on_complete(&self) {
-    self.once.call_once(|| self.actual.on_complete());
+    let actual = self.actual.clone();
+    self.once.call_once(move || {
+      let s = actual.lock().unwrap();
+      s.on_complete();
+    });
   }
   fn on_next(&self, t: T) {
-    self.actual.on_next(t);
+    self.actual.clone().lock().unwrap().on_next(t);
   }
 
   fn on_error(&self, e: E) {
-    self.once.call_once(|| self.actual.on_error(e));
+    let actual = self.actual.clone();
+    self.once.call_once(move || {
+      let s = actual.lock().unwrap();
+      s.on_error(e);
+    });
   }
 }

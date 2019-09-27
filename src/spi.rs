@@ -5,10 +5,11 @@ pub const REQUEST_MAX: usize = 0x7fff_ffff;
 pub trait Publisher {
   type Item;
   type Error;
-  fn subscribe(self, subscriber: impl Subscriber<Item = Self::Item, Error = Self::Error> + 'static + Send)
-  where
+  fn subscribe(
+    self,
+    subscriber: impl Subscriber<Item = Self::Item, Error = Self::Error> + 'static + Send,
+  ) where
     Self: Sized;
-  //   U: 'static + Send + ;
 }
 
 pub trait Subscription: Sized {
@@ -26,64 +27,18 @@ pub trait Subscriber {
 
   fn on_subscribe(&self, subscription: impl Subscription)
   where
-    Self: Sized,
-  {
-    subscription.request(REQUEST_MAX)
-  }
+    Self: Sized;
+
+  // fn on_subscribe(&self, subscription: impl Subscription)
+  // where
+  //   Self: Sized,
+  // {
+  //   subscription.request(REQUEST_MAX)
+  // }
 
   fn on_error(&self, e: Self::Error)
   where
     Self: Sized;
-}
-
-pub struct CoreSubscriber<T, E, A, B, C>
-where
-  A: Fn(),
-  B: Fn(T),
-  C: Fn(E),
-{
-  fn_complete: A,
-  fn_next: B,
-  fn_error: C,
-  _t: PhantomData<T>,
-  _e: PhantomData<E>,
-}
-
-impl<T, E, A, B, C> CoreSubscriber<T, E, A, B, C>
-where
-  A: Fn(),
-  B: Fn(T),
-  C: Fn(E),
-{
-  pub fn new(fn_complete: A, fn_next: B, fn_error: C) -> CoreSubscriber<T, E, A, B, C> {
-    CoreSubscriber {
-      fn_complete,
-      fn_next,
-      fn_error,
-      _t: PhantomData,
-      _e: PhantomData,
-    }
-  }
-}
-
-impl<T, E, A, B, C> Subscriber for CoreSubscriber<T, E, A, B, C>
-where
-  A: Fn(),
-  B: Fn(T),
-  C: Fn(E),
-{
-  type Item = T;
-  type Error = E;
-
-  fn on_complete(&self) {
-    (self.fn_complete)()
-  }
-  fn on_next(&self, t: T) {
-    (self.fn_next)(t)
-  }
-  fn on_error(&self, e: E) {
-    (self.fn_error)(e)
-  }
 }
 
 pub struct Subscribers;
@@ -130,6 +85,10 @@ where
   type Item = T;
   type Error = E;
 
+  fn on_subscribe(&self, subscription: impl Subscription) {
+    subscription.request(REQUEST_MAX);
+  }
+
   fn on_complete(&self) {}
   fn on_next(&self, t: T) {
     (self.f)(t)
@@ -154,7 +113,9 @@ impl<T, E> NoopSubscriber<T, E> {
 impl<T, E> Subscriber for NoopSubscriber<T, E> {
   type Item = T;
   type Error = E;
-
+  fn on_subscribe(&self, subscription: impl Subscription) {
+    subscription.request(REQUEST_MAX);
+  }
   fn on_complete(&self) {}
   fn on_next(&self, _t: T) {}
   fn on_error(&self, _e: E) {}
