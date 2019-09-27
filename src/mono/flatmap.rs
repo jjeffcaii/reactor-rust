@@ -51,10 +51,7 @@ where
   type Item = T2;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: 'static + Send + Subscriber<Item = T2, Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T2, Error = E> + 'static + Send) {
     let actual = Arc::new(subscriber);
     let s = MainSubscriber::new(actual.clone(), self.mapper);
     actual.on_subscribe(s);

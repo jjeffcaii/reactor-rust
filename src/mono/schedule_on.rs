@@ -36,10 +36,7 @@ where
   type Item = T;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: 'static + Send + Subscriber<Item = T, Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E> + 'static + Send) {
     self.scheduler.schedule(self.source, subscriber);
   }
 }

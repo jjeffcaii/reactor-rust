@@ -1,5 +1,5 @@
 use super::spi::Mono;
-use crate::spi::{Publisher,Subscriber};
+use crate::spi::{Publisher, Subscriber};
 use std::marker::PhantomData;
 
 pub struct MonoFilter<M, T, F, E>
@@ -17,7 +17,7 @@ where
 
 impl<M, T, F, E> MonoFilter<M, T, F, E>
 where
-  M: Mono< T,  E> + Sized,
+  M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T) -> bool,
 {
   pub(crate) fn new(m: M, f: F) -> MonoFilter<M, T, F, E> {
@@ -30,25 +30,22 @@ where
   }
 }
 
-impl<M, T, F, E> Mono<T,E> for MonoFilter<M, T, F, E>
+impl<M, T, F, E> Mono<T, E> for MonoFilter<M, T, F, E>
 where
-  M: Mono< T, E> + Sized,
+  M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T) -> bool,
 {
 }
 
 impl<M, T, F, E> Publisher for MonoFilter<M, T, F, E>
 where
-  M: Mono< T, E> + Sized,
+  M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T) -> bool,
 {
   type Item = T;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: 'static + Send + Subscriber<Item = T, Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E> + 'static + Send) {
     let m = self.parent;
     let f = self.predicate;
     let sub = FilterSubscriber::new(subscriber, f);

@@ -5,10 +5,10 @@ pub const REQUEST_MAX: usize = 0x7fff_ffff;
 pub trait Publisher {
   type Item;
   type Error;
-  fn subscribe<U>(self, subscriber: U)
+  fn subscribe(self, subscriber: impl Subscriber<Item = Self::Item, Error = Self::Error> + 'static + Send)
   where
-    Self: Sized,
-    U: 'static + Send + Subscriber<Item = Self::Item, Error = Self::Error>;
+    Self: Sized;
+  //   U: 'static + Send + ;
 }
 
 pub trait Subscription: Sized {

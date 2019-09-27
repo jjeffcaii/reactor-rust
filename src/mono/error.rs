@@ -1,6 +1,6 @@
 use super::misc::EmptySubscription;
 use super::spi::Mono;
-use crate::spi::{Publisher,Subscriber};
+use crate::spi::{Publisher, Subscriber};
 
 pub struct MonoError<E> {
   e: E,
@@ -12,17 +12,13 @@ impl<E> MonoError<E> {
   }
 }
 
-impl<E> Mono<(),E> for MonoError<E> {
-}
+impl<E> Mono<(), E> for MonoError<E> {}
 
 impl<E> Publisher for MonoError<E> {
   type Item = ();
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: Subscriber<Item = (), Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = (), Error = E>) {
     subscriber.on_subscribe(EmptySubscription);
     subscriber.on_error(self.e);
   }

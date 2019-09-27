@@ -1,5 +1,5 @@
 use super::spi::Mono;
-use crate::spi::{Subscriber, Subscription,Publisher};
+use crate::spi::{Publisher, Subscriber, Subscription};
 use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -20,11 +20,7 @@ where
   }
 }
 
-impl<T, G, E> Mono<T,E> for MonoCreate<T, G, E>
-where
-  G: Fn() -> Result<T, E>,
-{
-}
+impl<T, G, E> Mono<T, E> for MonoCreate<T, G, E> where G: Fn() -> Result<T, E> {}
 
 impl<T, G, E> Publisher for MonoCreate<T, G, E>
 where
@@ -33,10 +29,7 @@ where
   type Item = T;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: Subscriber<Item = Self::Item, Error = Self::Error>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E>) {
     let sub = Rc::new(subscriber);
     let subs = CreateSubscription::new(self.g, sub.clone());
     sub.on_subscribe(subs);

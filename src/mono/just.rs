@@ -21,11 +21,7 @@ where
   }
 }
 
-impl<T, E> Mono<T,E> for MonoJust<T, E>
-where
-  T: Clone,
-{
-}
+impl<T, E> Mono<T, E> for MonoJust<T, E> where T: Clone {}
 
 impl<T, E> Publisher for MonoJust<T, E>
 where
@@ -34,10 +30,7 @@ where
   type Item = T;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: Subscriber<Item = T, Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E>) {
     let s = Rc::new(subscriber);
     let sub = JustSubscription::new(self.t, s.clone());
     s.on_subscribe(sub);

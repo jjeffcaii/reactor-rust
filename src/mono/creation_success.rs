@@ -27,10 +27,7 @@ where
   type Item = T;
   type Error = ();
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: Subscriber<Item = T, Error = ()>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = ()>) {
     let sub = Rc::new(subscriber);
     let subs = CreateSuccessSubscription::new(self.g, sub.clone());
     sub.on_subscribe(subs);

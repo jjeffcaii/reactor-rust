@@ -1,0 +1,6 @@
+language: rust
+rust:
+  - stable
+script:
+  - cargo test --verbose --all
+  - RUST_LOG=info cargo run --example mono

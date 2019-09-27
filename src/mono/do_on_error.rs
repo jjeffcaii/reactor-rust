@@ -1,8 +1,8 @@
 use super::spi::Mono;
-use crate::spi::{Publisher,Subscriber};
+use crate::spi::{Publisher, Subscriber};
 use std::marker::PhantomData;
 
-pub struct DoOnError<T, E, M, F>
+pub struct MonoDoOnError<T, E, M, F>
 where
   T: 'static,
   E: 'static,
@@ -11,29 +11,35 @@ where
 {
   source: M,
   f: F,
-  _t:PhantomData<T>,
+  _t: PhantomData<T>,
   _e: PhantomData<E>,
 }
 
-impl<T, E, M, F> DoOnError<T, E, M, F>
+impl<T, E, M, F> MonoDoOnError<T, E, M, F>
 where
   T: 'static,
   E: 'static,
   M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&E),
 {
-  pub(crate) fn new(source: M, f: F) -> DoOnError<T, E, M, F> {
-    DoOnError { source, f,_t: PhantomData,_e: PhantomData, }
+  pub(crate) fn new(source: M, f: F) -> MonoDoOnError<T, E, M, F> {
+    MonoDoOnError {
+      source,
+      f,
+      _t: PhantomData,
+      _e: PhantomData,
+    }
   }
 }
-impl<T, E, M, F> Mono<T,E> for DoOnError<T, E, M, F>
+
+impl<T, E, M, F> Mono<T, E> for MonoDoOnError<T, E, M, F>
 where
   M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&E),
 {
 }
 
-impl<T, E, M, F> Publisher for DoOnError<T, E, M, F>
+impl<T, E, M, F> Publisher for MonoDoOnError<T, E, M, F>
 where
   M: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&E),
@@ -41,11 +47,7 @@ where
   type Item = T;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    Self: Sized,
-    S: 'static + Send + Subscriber<Item = T, Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E> + 'static + Send) {
     let sub = DoOnErrorSubscriber::new(subscriber, self.f);
     self.source.subscribe(sub);
   }

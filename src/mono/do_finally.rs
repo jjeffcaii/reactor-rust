@@ -1,7 +1,7 @@
 use super::spi::Mono;
-use crate::spi::{Subscriber, Subscription, Publisher};
-use std::sync::Once;
+use crate::spi::{Publisher, Subscriber, Subscription};
 use std::marker::PhantomData;
+use std::sync::Once;
 
 pub struct MonoDoFinally<T, E, M, F>
 where
@@ -13,7 +13,7 @@ where
   source: M,
   action: F,
   _t: PhantomData<T>,
-  _e: PhantomData<E>
+  _e: PhantomData<E>,
 }
 
 impl<T, E, M, F> MonoDoFinally<T, E, M, F>
@@ -22,11 +22,16 @@ where
   F: 'static + Send + Fn(),
 {
   pub(crate) fn new(source: M, action: F) -> MonoDoFinally<T, E, M, F> {
-    MonoDoFinally { source, action,_t: PhantomData,_e: PhantomData, }
+    MonoDoFinally {
+      source,
+      action,
+      _t: PhantomData,
+      _e: PhantomData,
+    }
   }
 }
 
-impl<T, E, M, F> Mono<T,E> for MonoDoFinally<T, E, M, F>
+impl<T, E, M, F> Mono<T, E> for MonoDoFinally<T, E, M, F>
 where
   M: Mono<T, E>,
   F: 'static + Send + Fn(),
@@ -35,16 +40,13 @@ where
 
 impl<T, E, M, F> Publisher for MonoDoFinally<T, E, M, F>
 where
-  M: Mono<T,E>,
+  M: Mono<T, E>,
   F: 'static + Send + Fn(),
 {
   type Item = T;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: 'static + Send + Subscriber<Item = T, Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E> + 'static + Send) {
     let sub = DoFinallySubscriber::new(subscriber, self.action);
     self.source.subscribe(sub);
   }

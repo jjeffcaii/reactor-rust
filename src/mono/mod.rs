@@ -15,7 +15,7 @@ mod transform;
 pub use creation::MonoCreate;
 pub use creation_success::MonoCreateSuccess;
 pub use do_finally::MonoDoFinally;
-pub use do_on_error::DoOnError;
+pub use do_on_error::MonoDoOnError;
 pub use error::MonoError;
 pub use filter::MonoFilter;
 pub use flatmap::MonoFlatMap;

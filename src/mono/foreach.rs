@@ -1,5 +1,5 @@
 use super::spi::Mono;
-use crate::spi::{Publisher,Subscriber};
+use crate::spi::{Publisher, Subscriber};
 use std::marker::PhantomData;
 
 pub struct Foreach<Z, T, F, E>
@@ -21,11 +21,16 @@ where
   F: 'static + Send + Fn(&T),
 {
   pub(crate) fn new(zero: Z, f: F) -> Foreach<Z, T, F, E> {
-    Foreach { zero, f,_t: PhantomData,_e: PhantomData, }
+    Foreach {
+      zero,
+      f,
+      _t: PhantomData,
+      _e: PhantomData,
+    }
   }
 }
 
-impl<Z, T, F, E> Mono<T,E> for Foreach<Z, T, F, E>
+impl<Z, T, F, E> Mono<T, E> for Foreach<Z, T, F, E>
 where
   Z: Mono<T, E> + Sized,
   F: 'static + Send + Fn(&T),
@@ -40,10 +45,7 @@ where
   type Item = T;
   type Error = E;
 
-  fn subscribe<S>(self, subscriber: S)
-  where
-    S: 'static + Send + Subscriber<Item = T, Error = E>,
-  {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E> + 'static + Send) {
     let sub = ForeachSubscriber::new(subscriber, self.f);
     self.zero.subscribe(sub);
   }
