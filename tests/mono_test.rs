@@ -147,6 +147,7 @@ fn block() {
 }
 
 #[test]
+#[ignore]
 fn test_flatmap() {
   let result = mono::just(1)
     .flatmap(|n| mono::just(format!("as string {}", n)))
