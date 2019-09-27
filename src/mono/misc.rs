@@ -53,7 +53,7 @@ impl<T, E> Subscriber for BlockSubscriber<T, E> {
   fn on_error(&self, e: E) {
     let tx = self.tx.clone();
     self.once.call_once(|| {
-      tx.clone().send(Err(e)).unwrap();
+      tx.send(Err(e)).unwrap();
     });
   }
 }

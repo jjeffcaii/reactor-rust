@@ -2,6 +2,7 @@ use super::misc::EmptySubscription;
 use super::spi::Mono;
 use crate::spi::{Publisher, Subscriber, Subscription, REQUEST_MAX};
 use std::marker::PhantomData;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, Once};
 
 pub struct MonoFlatMap<T1, T2, E, M1, M2, F>
@@ -87,6 +88,7 @@ where
   actual: Arc<Mutex<S>>,
   mapper: F,
   once: Once,
+  completed: Arc<AtomicBool>,
   _m: PhantomData<M>,
   _t1: PhantomData<T1>,
 }
@@ -104,6 +106,7 @@ where
     MainSubscriber {
       actual,
       mapper,
+      completed: Arc::new(AtomicBool::new(false)),
       once: Once::new(),
       _m: PhantomData,
       _t1: PhantomData,
@@ -129,14 +132,17 @@ where
 
   fn on_complete(&self) {
     let actual = self.actual.clone();
+    let completed = self.completed.clone();
     self.once.call_once(|| {
-      let v = actual.lock().unwrap();
-      v.on_complete();
+      if completed.load(Ordering::SeqCst) {
+        let v = actual.lock().unwrap();
+        v.on_complete();
+      }
     });
   }
   fn on_next(&self, t: T1) {
     let m2 = (self.mapper)(t);
-    let inner = InnerSubscriber::new(self.actual.clone());
+    let inner = InnerSubscriber::new(self.actual.clone(), self.completed.clone());
     m2.subscribe(inner)
   }
   fn on_error(&self, e: E) {
@@ -153,6 +159,7 @@ where
   S: 'static + Send + Subscriber<Item = T, Error = E>,
 {
   actual: Arc<Mutex<S>>,
+  completed: Arc<AtomicBool>,
   once: Once,
 }
 
@@ -160,9 +167,10 @@ impl<T, E, S> InnerSubscriber<T, E, S>
 where
   S: 'static + Send + Subscriber<Item = T, Error = E>,
 {
-  fn new(actual: Arc<Mutex<S>>) -> InnerSubscriber<T, E, S> {
+  fn new(actual: Arc<Mutex<S>>, completed: Arc<AtomicBool>) -> InnerSubscriber<T, E, S> {
     InnerSubscriber {
       actual,
+      completed,
       once: Once::new(),
     }
   }
@@ -181,9 +189,12 @@ where
 
   fn on_complete(&self) {
     let actual = self.actual.clone();
+    let completed = self.completed.clone();
     self.once.call_once(move || {
       let s = actual.lock().unwrap();
-      s.on_complete();
+      if completed.compare_and_swap(false, true, Ordering::SeqCst) {
+        s.on_complete();
+      }
     });
   }
   fn on_next(&self, t: T) {
