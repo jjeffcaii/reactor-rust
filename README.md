@@ -1,5 +1,10 @@
 # reactor-rust
 
+[![Crates.io](https://img.shields.io/crates/v/reactor_rs)](https://crates.io/crates/reactor_rs)
+[![Crates.io](https://img.shields.io/crates/d/reactor_rs)](https://crates.io/crates/reactor_rs)
+[![License](https://img.shields.io/github/license/jjeffcaii/reactor-rust.svg)](https://github.com/jjeffcaii/reactor-rust/blob/master/LICENSE)
+[![GitHub Release](https://img.shields.io/github/release-pre/jjeffcaii/reactor-rust.svg)](https://github.com/jjeffcaii/reactor-rust/releases)
+
 > reactor-rust is an implementation of the [Reactive-Streams](https://www.reactive-streams.org) in Rust.
 It is under active development. **Do not use it in a production environment!**
 
