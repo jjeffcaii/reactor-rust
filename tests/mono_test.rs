@@ -170,10 +170,12 @@ fn test_finally() {
       println!("====> DO_FINALLY!!!");
     })
     .map(|v| format!("Hello {}", v))
+    .do_on_complete(|| println!("====> call do_on_complet!"))
     .subscribe(EchoSubscriber::new());
   mono::error("Oops!")
     .do_finally(|| {
       println!("====> DO_FINALLY!!!");
     })
+    .do_on_complete(|| unreachable!())
     .subscribe(EchoSubscriber::new());
 }

@@ -1,6 +1,7 @@
 use super::misc::BlockSubscriber;
 use super::{
-  Foreach, MonoDoFinally, MonoDoOnError, MonoFilter, MonoFlatMap, MonoScheduleOn, MonoTransform,
+  Foreach, MonoDoFinally, MonoDoOnComplete, MonoDoOnError, MonoFilter, MonoFlatMap, MonoScheduleOn,
+  MonoTransform,
 };
 use crate::schedulers::Scheduler;
 use crate::spi::Publisher;
@@ -31,6 +32,14 @@ pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
     Self: Sized,
   {
     Foreach::new(self, f)
+  }
+
+  fn do_on_complete<F>(self, f: F) -> MonoDoOnComplete<Self::Item, Self::Error, Self, F>
+  where
+    Self: Sized,
+    F: 'static + Send + Fn(),
+  {
+    MonoDoOnComplete::new(self, f)
   }
 
   fn map<A, F>(self, transform: F) -> MonoTransform<Self, Self::Item, A, F, Self::Error>
