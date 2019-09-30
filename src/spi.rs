@@ -29,13 +29,6 @@ pub trait Subscriber {
   where
     Self: Sized;
 
-  // fn on_subscribe(&self, subscription: impl Subscription)
-  // where
-  //   Self: Sized,
-  // {
-  //   subscription.request(REQUEST_MAX)
-  // }
-
   fn on_error(&self, e: Self::Error)
   where
     Self: Sized;
