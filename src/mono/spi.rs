@@ -21,18 +21,6 @@ pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
     rx.recv().unwrap()
   }
 
-  fn to_future<F>(self) -> F
-  where
-    Self: Sized,
-    Self::Item: 'static + Send,
-    Self::Error: 'static + Send,
-    F: Future<Item = Self::Item, Error = Self::Error>,
-  {
-    let (sub,rx) = BlockSubscriber::new();
-    self.subscribe(sub);
-    unimplemented!()
-  }
-
   fn do_on_error<F>(self, f: F) -> MonoDoOnError<Self::Item, Self::Error, Self, F>
   where
     F: 'static + Send + Fn(&Self::Error),

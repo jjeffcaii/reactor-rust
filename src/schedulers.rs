@@ -2,7 +2,6 @@ extern crate futures;
 extern crate tokio;
 
 use futures::prelude::*;
-use tokio::runtime::Runtime;
 
 use crate::spi::{Publisher, Subscriber};
 use std::marker::PhantomData;
@@ -20,14 +19,10 @@ pub trait Scheduler {
     S: 'static + Send + Sized + Subscriber<Item = Self::Item, Error = Self::Error>;
 }
 
-pub fn immediate<T, E>() -> ImmediateScheduler<T, E>
-where
-  T: 'static,
-  E: 'static,
-{
+pub fn immediate<T, E>() -> impl Scheduler<Item = T, Error = E> {
   ImmediateScheduler::new()
 }
-pub fn new_thread<T, E>() -> NewThreadScheduler<T, E>
+pub fn new_thread<T, E>() -> impl Scheduler<Item = T, Error = E>
 where
   T: 'static,
   E: 'static,
@@ -35,7 +30,11 @@ where
   NewThreadScheduler::new()
 }
 
-pub struct ImmediateScheduler<T, E> {
+pub fn tokio<T, E>() -> impl Scheduler<Item = T, Error = E> {
+  TkScheduler::new()
+}
+
+struct ImmediateScheduler<T, E> {
   _t: PhantomData<T>,
   _e: PhantomData<E>,
 }
@@ -62,7 +61,7 @@ impl<T, E> Scheduler for ImmediateScheduler<T, E> {
   }
 }
 
-pub struct TkScheduler<T, E> {
+struct TkScheduler<T, E> {
   _t: PhantomData<T>,
   _e: PhantomData<E>,
 }
@@ -89,12 +88,11 @@ impl<T, E> Scheduler for TkScheduler<T, E> {
       p.subscribe(s);
       Ok(())
     });
-    let mut rt = Runtime::new().unwrap();
-    rt.spawn(fu);
+    tokio::spawn(fu);
   }
 }
 
-pub struct NewThreadScheduler<T, E> {
+struct NewThreadScheduler<T, E> {
   _t: PhantomData<T>,
   _e: PhantomData<E>,
 }
