@@ -151,7 +151,7 @@ fn test_flatmap() {
   let result = mono::just(1)
     .flatmap(|n| {
       mono::success(move || {
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(600));
         n * 2
       })
       .subscribe_on(schedulers::new_thread())

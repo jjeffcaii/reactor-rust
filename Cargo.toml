@@ -12,10 +12,11 @@ description = "reactor-rust is an implementation of the Reactive-Streams."
 [dependencies]
 log = "0.4.8"
 futures = "0.1.29"
+tokio = "0.1.22"
 
 [dev-dependencies]
-env_logger = "0.6.2"
-rand = "0.7.0"
+env_logger = "0.7.0"
+rand = "0.7.2"
 
 [[example]]
 name = "mono"

@@ -1,3 +1,5 @@
+extern crate futures;
+
 use super::misc::BlockSubscriber;
 use super::{
   Foreach, MonoDoFinally, MonoDoOnComplete, MonoDoOnError, MonoFilter, MonoFlatMap, MonoScheduleOn,
@@ -5,6 +7,7 @@ use super::{
 };
 use crate::schedulers::Scheduler;
 use crate::spi::Publisher;
+use futures::prelude::*;
 
 pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
   fn block(self) -> Result<Option<Self::Item>, Self::Error>
@@ -16,6 +19,18 @@ pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
     let (sub, rx) = BlockSubscriber::new();
     self.subscribe(sub);
     rx.recv().unwrap()
+  }
+
+  fn to_future<F>(self) -> F
+  where
+    Self: Sized,
+    Self::Item: 'static + Send,
+    Self::Error: 'static + Send,
+    F: Future<Item = Self::Item, Error = Self::Error>,
+  {
+    let (sub,rx) = BlockSubscriber::new();
+    self.subscribe(sub);
+    unimplemented!()
   }
 
   fn do_on_error<F>(self, f: F) -> MonoDoOnError<Self::Item, Self::Error, Self, F>
