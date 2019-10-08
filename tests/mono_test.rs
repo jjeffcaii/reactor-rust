@@ -2,7 +2,7 @@ extern crate futures;
 extern crate reactor_rs;
 
 use futures::future::lazy;
-use reactor_rs::mono;
+use reactor_rs::mono::{self, Emitter};
 use reactor_rs::prelude::*;
 use reactor_rs::schedulers;
 use std::{fmt, marker::PhantomData};
@@ -51,6 +51,7 @@ where
   type Error = E;
 
   fn on_subscribe(&self, subscription: impl Subscription) {
+    println!("[ON_SUBSCRIBE]");
     subscription.request(REQUEST_MAX)
   }
 
@@ -205,4 +206,15 @@ fn test_transform_error() {
       assert_eq!("ERR_1234", e);
     })
     .subscribe(Subscribers::noop());
+}
+
+#[test]
+fn test_lazy() {
+  mono::lazy(|emitter: &Emitter<u32, ()>| emitter.success(1234))
+    .do_finally(|| println!("*** finally!"))
+    .do_on_success(|n| {
+      println!("bingo: {}", *n);
+      assert_eq!(1234, *n);
+    })
+    .subscribe(EchoSubscriber::new());
 }
