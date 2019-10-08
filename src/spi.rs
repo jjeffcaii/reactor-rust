@@ -2,13 +2,14 @@ use std::marker::PhantomData;
 
 pub const REQUEST_MAX: usize = 0x7fff_ffff;
 
-pub trait Publisher: Sized {
+pub trait Publisher {
   type Item;
   type Error;
   fn subscribe(
     self,
     subscriber: impl Subscriber<Item = Self::Item, Error = Self::Error> + 'static + Send,
-  );
+  ) where
+    Self: Sized;
 }
 
 pub trait Subscription: Sized {
