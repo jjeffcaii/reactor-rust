@@ -1,4 +1,5 @@
 use super::emitter::Emitter;
+use super::misc::EmptySubscription;
 use crate::spi::{Publisher, Subscriber, Subscription};
 use std::sync::mpsc::{channel, Receiver, Sender};
 
@@ -24,6 +25,7 @@ impl<T, E> Publisher for Processor<T, E> {
 
   fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E> + 'static + Send) {
     let s = InnerSubscriber::new(subscriber, self.rx);
+    s.on_subscribe(EmptySubscription);
   }
 }
 

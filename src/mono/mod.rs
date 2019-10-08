@@ -29,6 +29,7 @@ pub use flatmap::MonoFlatMap;
 pub use foreach::Foreach;
 pub use just::MonoJust;
 pub use lazy::MonoLazy;
+pub use processor::Processor;
 pub use schedule_on::MonoScheduleOn;
 pub use spi::Mono;
 pub use transform::MonoTransform;

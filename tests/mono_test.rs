@@ -218,3 +218,15 @@ fn test_lazy() {
     })
     .subscribe(EchoSubscriber::new());
 }
+
+#[test]
+fn test_processor() {
+  let pc = mono::Processor::<u32, ()>::new();
+  let emitter = pc.emitter();
+  std::thread::spawn(move || {
+    thread::sleep(Duration::from_secs(3));
+    emitter.success(1234);
+  });
+
+  pc.subscribe(EchoSubscriber::new());
+}
