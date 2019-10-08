@@ -80,7 +80,7 @@ fn tiny() {
     ret
   })
   .subscribe(EchoSubscriber::new());
-  let just = mono::just(77778888);
+  let just = mono::just::<u32, ()>(77778888);
   just.clone().subscribe(EchoSubscriber::new());
   just.clone().subscribe(EchoSubscriber::new());
 }
@@ -100,7 +100,7 @@ fn bingo() {
   .do_on_success(|it| println!("******* foreach2: {:?}", it))
   .subscribe(EchoSubscriber::new());
 
-  mono::just(1234)
+  mono::just::<u32, ()>(1234)
     .do_on_success(|it| println!("******* foreach1: {:?}", it))
     .do_on_success(|it| println!("******* foreach2: {:?}", it))
     .subscribe(EchoSubscriber::new());
@@ -108,7 +108,7 @@ fn bingo() {
 
 #[test]
 fn test_map() {
-  mono::just(2)
+  mono::just::<u32, ()>(2)
     .map(|n| n * 2)
     .map(|n| n + 1)
     .filter(|n| *n > 4)
@@ -136,7 +136,7 @@ fn subscribe_on() {
 
 #[test]
 fn block() {
-  let v = mono::just(512)
+  let v = mono::just::<u32, ()>(512)
     .subscribe_on(schedulers::new_thread())
     .map(|it| {
       thread::sleep(Duration::from_secs(1));
@@ -194,4 +194,15 @@ fn test_schedule_tokio() {
     }
     Ok(())
   }));
+}
+
+#[test]
+fn test_transform_error() {
+  mono::error(1234)
+    .map_err(|e1| format!("ERR_{}", e1))
+    .do_on_error(|e| {
+      println!("bingo error: {}", e);
+      assert_eq!("ERR_1234", e);
+    })
+    .subscribe(Subscribers::noop());
 }

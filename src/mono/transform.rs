@@ -1,5 +1,5 @@
 use super::spi::Mono;
-use crate::spi::{Publisher, Subscriber,Subscription};
+use crate::spi::{Publisher, Subscriber, Subscription};
 use std::marker::PhantomData;
 
 pub struct MonoTransform<M, T1, T2, F, E>
@@ -91,7 +91,7 @@ where
   type Item = T1;
   type Error = E;
 
-  fn on_subscribe(&self, subscription: impl Subscription){
+  fn on_subscribe(&self, subscription: impl Subscription) {
     self.actual.on_subscribe(subscription);
   }
 

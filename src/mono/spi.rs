@@ -1,13 +1,10 @@
-extern crate futures;
-
 use super::misc::BlockSubscriber;
 use super::{
   Foreach, MonoDoFinally, MonoDoOnComplete, MonoDoOnError, MonoFilter, MonoFlatMap, MonoScheduleOn,
-  MonoTransform,
+  MonoTransform, MonoTransformError,
 };
 use crate::schedulers::Scheduler;
 use crate::spi::Publisher;
-use futures::prelude::*;
 
 pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
   fn block(self) -> Result<Option<Self::Item>, Self::Error>
@@ -51,6 +48,14 @@ pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
     Self: Sized,
   {
     MonoTransform::new(self, transform)
+  }
+
+  fn map_err<E2, F>(self, transform: F) -> MonoTransformError<Self, Self::Item, F, Self::Error, E2>
+  where
+    F: 'static + Send + Fn(E) -> E2,
+    Self: Sized,
+  {
+    MonoTransformError::new(self, transform)
   }
 
   fn flatmap<A, M, F>(self, mapper: F) -> MonoFlatMap<Self::Item, A, Self::Error, Self, M, F>
