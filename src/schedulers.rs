@@ -1,6 +1,3 @@
-extern crate futures;
-extern crate tokio;
-
 use futures::prelude::*;
 
 use crate::spi::{Publisher, Subscriber};

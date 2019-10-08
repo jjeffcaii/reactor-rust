@@ -1,6 +1,3 @@
-extern crate futures;
-extern crate reactor_rs;
-
 use futures::future::lazy;
 use reactor_rs::mono;
 use reactor_rs::prelude::*;
