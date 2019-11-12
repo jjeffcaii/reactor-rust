@@ -8,6 +8,7 @@ mod error;
 mod filter;
 mod flatmap;
 mod foreach;
+mod future;
 mod just;
 mod lazy;
 mod misc;

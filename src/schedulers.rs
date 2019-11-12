@@ -1,5 +1,4 @@
 use crate::spi::{Publisher, Subscriber};
-use futures::prelude::*;
 use std::marker::PhantomData;
 use std::thread;
 
@@ -26,10 +25,6 @@ where
   NewThreadScheduler::new()
 }
 
-pub fn tokio<T, E>() -> impl Scheduler<Item = T, Error = E> {
-  TkScheduler::new()
-}
-
 struct ImmediateScheduler<T, E> {
   _t: PhantomData<T>,
   _e: PhantomData<E>,
@@ -54,37 +49,6 @@ impl<T, E> Scheduler for ImmediateScheduler<T, E> {
     S: 'static + Send + Sized + Subscriber<Item = T, Error = E>,
   {
     publisher.subscribe(subscriber);
-  }
-}
-
-struct TkScheduler<T, E> {
-  _t: PhantomData<T>,
-  _e: PhantomData<E>,
-}
-
-impl<T, E> TkScheduler<T, E> {
-  fn new() -> TkScheduler<T, E> {
-    TkScheduler {
-      _t: PhantomData,
-      _e: PhantomData,
-    }
-  }
-}
-
-impl<T, E> Scheduler for TkScheduler<T, E> {
-  type Item = T;
-  type Error = E;
-
-  fn schedule<P, S>(&self, publisher: P, subscriber: S)
-  where
-    P: 'static + Send + Sized + Publisher<Item = T, Error = E>,
-    S: 'static + Send + Sized + Subscriber<Item = T, Error = E>,
-  {
-    let fu = futures::future::ok::<(P, S), ()>((publisher, subscriber)).and_then(move |(p, s)| {
-      p.subscribe(s);
-      Ok(())
-    });
-    tokio::spawn(fu);
   }
 }
 

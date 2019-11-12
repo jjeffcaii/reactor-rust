@@ -1,7 +1,5 @@
-extern crate futures;
 extern crate reactor_rs;
 
-use futures::future::lazy;
 use reactor_rs::mono::{self, Emitter};
 use reactor_rs::prelude::*;
 use reactor_rs::schedulers;
@@ -184,20 +182,6 @@ fn test_finally() {
 }
 
 #[test]
-fn test_schedule_tokio() {
-  tokio::run(lazy(|| {
-    for x in 0..10 {
-      mono::success(move || x)
-        .map(|v| format!("Hello {}", v))
-        .do_on_success(|v| println!("******* bingo: {}", v))
-        .subscribe_on(schedulers::tokio())
-        .subscribe(Subscribers::noop());
-    }
-    Ok(())
-  }));
-}
-
-#[test]
 fn test_transform_error() {
   mono::error(1234)
     .map_err(|e1| format!("ERR_{}", e1))
@@ -230,3 +214,7 @@ fn test_processor() {
 
   pc.subscribe(EchoSubscriber::new());
 }
+
+#[test]
+#[ignore]
+fn test_async_await() {}

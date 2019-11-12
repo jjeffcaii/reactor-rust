@@ -1,7 +1,4 @@
-extern crate futures;
-
-use crate::spi::{Publisher, Subscriber, Subscription, REQUEST_MAX};
-use futures::prelude::*;
+use crate::spi::{Subscriber, Subscription, REQUEST_MAX};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Once;
 
@@ -13,25 +10,6 @@ pub(crate) struct EmptySubscription;
 impl Subscription for EmptySubscription {
   fn request(&self, _n: usize) {}
   fn cancel(&self) {}
-}
-
-pub(crate) struct MonoFuture<T, E, M>
-where
-  M: Publisher<Item = T, Error = E>,
-{
-  source: M,
-}
-
-impl<T, E, M> Future for MonoFuture<T, E, M>
-where
-  M: Publisher<Item = T, Error = E>,
-{
-  type Item = T;
-  type Error = E;
-
-  fn poll(&mut self) -> Poll<T, E> {
-    unimplemented!()
-  }
 }
 
 pub(crate) struct BlockSubscriber<T, E> {
