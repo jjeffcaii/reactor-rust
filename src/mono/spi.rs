@@ -5,8 +5,19 @@ use super::{
 };
 use crate::schedulers::Scheduler;
 use crate::spi::Publisher;
+use std::future::Future;
+use std::pin::Pin;
 
 pub trait Mono<T, E>: Publisher<Item = T, Error = E> {
+  fn to_future(self) -> Pin<Box<dyn Future<Output = Result<Option<Self::Item>, Self::Error>>>>
+  where
+    Self::Item: 'static + Send,
+    Self::Error: 'static + Send,
+    Self: Sized + 'static,
+  {
+    Box::pin(async move { self.block() })
+  }
+
   fn block(self) -> Result<Option<Self::Item>, Self::Error>
   where
     Self::Item: 'static + Send,

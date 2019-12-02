@@ -1,6 +1,6 @@
 [package]
 name = "reactor_rs"
-version = "0.0.5"
+version = "0.0.6"
 authors = ["Jeffsky <jjeffcaii@outlook.com>"]
 edition = "2018"
 readme = "README.md"
@@ -15,6 +15,7 @@ log = "0.4.8"
 [dev-dependencies]
 env_logger = "0.7.1"
 rand = "0.7.2"
+futures = "0.3.1"
 
 [[example]]
 name = "mono"

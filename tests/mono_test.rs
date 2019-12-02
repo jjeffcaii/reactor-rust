@@ -1,5 +1,6 @@
 extern crate reactor_rs;
 
+use futures::executor::block_on;
 use reactor_rs::mono::{self, Emitter};
 use reactor_rs::prelude::*;
 use reactor_rs::schedulers;
@@ -216,5 +217,16 @@ fn test_processor() {
 }
 
 #[test]
-#[ignore]
-fn test_async_await() {}
+fn test_async_await() {
+  let m = mono::lazy(|emitter: &Emitter<u32, ()>| emitter.success(1234))
+    .do_finally(|| println!("*** finally!"))
+    .do_on_success(|n| {
+      println!("bingo: {}", *n);
+      assert_eq!(1234, *n);
+    });
+
+  block_on(async move {
+    let v = m.to_future().await.unwrap().unwrap();
+    println!("exec result: {}", v);
+  });
+}
