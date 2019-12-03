@@ -36,34 +36,34 @@ pub use spi::Mono;
 pub use transform::MonoTransform;
 pub use transform_error::MonoTransformError;
 
-pub fn lazy<T, E, F>(f: F) -> MonoLazy<T, E, F>
+pub fn lazy<T, E, F>(f: F) -> impl Mono<T, E>
 where
   F: Fn(&Emitter<T, E>),
 {
   MonoLazy::new(f)
 }
 
-pub fn success<T, G>(gen: G) -> MonoCreateSuccess<T, G>
+pub fn success<T, G>(gen: G) -> impl Mono<T, ()>
 where
   G: Fn() -> T,
 {
   MonoCreateSuccess::new(gen)
 }
 
-pub fn create<T, G, E>(gen: G) -> MonoCreate<T, G, E>
+pub fn create<T, G, E>(gen: G) -> impl Mono<T, E>
 where
   G: Fn() -> Result<T, E>,
 {
   MonoCreate::new(gen)
 }
 
-pub fn just<T, E>(t: T) -> MonoJust<T, E>
+pub fn just<T, E>(t: T) -> impl Mono<T, E>
 where
   T: Clone,
 {
   MonoJust::new(t)
 }
 
-pub fn error<E>(e: E) -> MonoError<E> {
+pub fn error<T, E>(e: E) -> impl Mono<T, E> {
   MonoError::new(e)
 }

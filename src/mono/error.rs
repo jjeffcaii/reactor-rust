@@ -1,24 +1,26 @@
 use super::misc::EmptySubscription;
 use super::spi::Mono;
 use crate::spi::{Publisher, Subscriber};
+use std::marker::PhantomData;
 
-pub struct MonoError<E> {
+pub struct MonoError<T, E> {
   e: E,
+  _t: PhantomData<T>,
 }
 
-impl<E> MonoError<E> {
-  pub(crate) fn new(e: E) -> MonoError<E> {
-    MonoError { e }
+impl<T, E> MonoError<T, E> {
+  pub(crate) fn new(e: E) -> MonoError<T, E> {
+    MonoError { e, _t: PhantomData }
   }
 }
 
-impl<E> Mono<(), E> for MonoError<E> {}
+impl<T, E> Mono<T, E> for MonoError<T, E> {}
 
-impl<E> Publisher for MonoError<E> {
-  type Item = ();
+impl<T, E> Publisher for MonoError<T, E> {
+  type Item = T;
   type Error = E;
 
-  fn subscribe(self, subscriber: impl Subscriber<Item = (), Error = E>) {
+  fn subscribe(self, subscriber: impl Subscriber<Item = T, Error = E>) {
     subscriber.on_subscribe(EmptySubscription);
     subscriber.on_error(self.e);
   }
